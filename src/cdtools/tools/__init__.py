@@ -20,6 +20,7 @@ from cdtools.tools import image_processing
 from cdtools.tools import initializers
 from cdtools.tools import plotting
 from cdtools.tools import interactions
+from cdtools.tools import ml
 from cdtools.tools import propagators
 from cdtools.tools import measurements
 from cdtools.tools import analysis
