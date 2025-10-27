@@ -9,3 +9,4 @@ pooch
 sphinx>=4.3.0 # Fixes a bug with bulleted lists
 sphinx-argparse
 sphinx_rtd_theme>=0.5.1 # Fixes a bug with bulleted lists
+dlsia
