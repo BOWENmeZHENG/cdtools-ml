@@ -35,7 +35,7 @@ class Config:
     # DATA: str = 'aps'
 
     AMP_MODEL: str = None
-    PHASE_MODEL_DIR: str = '1018_0547_phase_combined_exit_waves_d3_bc16_bs16_lr0.001_s43'
+    PHASE_MODEL_DIR: str = 'example_models'
 
     SAVE_TRAIN_DATA: bool = False
     SAVE_EPOCHS: list = field(default_factory=lambda: [10, 30, 50])
