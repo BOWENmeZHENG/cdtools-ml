@@ -1,9 +1,56 @@
 import torch as t
+from torch import nn
 from cdtools.models import CDIModel
 from cdtools import tools
 from cdtools.tools import plotting as p
+from dataclasses import dataclass
+from dlsia.core.networks import tunet
 
 __all__ = ['SimplePtycho']        
+
+@dataclass
+class ModelConfig:
+    input_size: int = 512
+    depth: int = 3
+    base_channels: int = 16
+    growth_rate: int = 2
+    hidden_rate: int = 1
+
+class TUNetModel(nn.Module):
+    def __init__(self, config):
+        super().__init__()
+        self.image_shape = (config.input_size, config.input_size)
+        self.in_channels = 1
+        self.out_channels = 1
+        self.depth = config.depth
+        self.base_channels = config.base_channels
+        self.growth_rate = config.growth_rate
+        self.hidden_rate = config.hidden_rate
+        self.model = tunet.TUNet(
+            image_shape=self.image_shape,
+            in_channels=self.in_channels,
+            out_channels=self.out_channels,
+            depth=self.depth,
+            base_channels=self.base_channels,
+            growth_rate=self.growth_rate,
+            hidden_rate=self.hidden_rate
+        )
+        
+    def forward(self, x):
+        output = self.model(x)
+        return output
+
+def load_model(model_path, freeze=False, device='cuda'):
+    config = ModelConfig()
+    model = TUNetModel(config)
+    checkpoint = t.load(model_path, map_location=device)
+    model.load_state_dict(checkpoint)
+    model.to(device)
+    model.eval() 
+
+    for param in model.parameters():
+        param.requires_grad = not freeze
+    return model
 
 class SimplePtycho(CDIModel):
     """A simple ptychography model to demonstrate the structure of a model
@@ -43,8 +90,8 @@ class SimplePtycho(CDIModel):
 
 
     @classmethod
-    def from_dataset(cls, dataset):
-
+    def from_dataset(cls, dataset, amplitude_model_path=None, phase_model_path=None,
+                     ml_epochs=[], propagation_distance=None, freeze=False):
         # We get the key geometry information from the dataset
         wavelength = dataset.wavelength
         det_basis = dataset.detector_geometry['basis']
@@ -68,16 +115,32 @@ class SimplePtycho(CDIModel):
         )
 
         # Finally, initialize the probe and object using this information
-        probe = tools.initializers.SHARP_style_probe(dataset)
+        probe = tools.initializers.SHARP_style_probe(dataset, propagation_distance=propagation_distance)
+        # probe = tools.initializers.gaussian_probe(
+        #         dataset,
+        #         probe_basis,
+        #         det_shape, 
+        #         1.0
+        #     )
         obj = t.ones(obj_size).to(dtype=t.complex64)
 
-        return cls(
+        # Create the model instance
+        model = cls(
             wavelength,
             probe_basis,
             probe,
             obj,
             min_translation=min_translation
         )
+        
+        # Load and store the ML models if paths are provided
+        if amplitude_model_path is not None: # and phase_model_path is not None:
+            model.amplitude_model = load_model(amplitude_model_path, freeze=freeze, device='cuda')
+        if phase_model_path is not None:
+            model.phase_model = load_model(phase_model_path, freeze=freeze, device='cuda')
+        model.ml_epochs = ml_epochs
+        return model
+
 
 
     def interaction(self, index, translations):
@@ -95,6 +158,9 @@ class SimplePtycho(CDIModel):
             self.obj,
             pix_trans)
 
+    # New code here
+    def ml(self, wavefields, amplitude_model, phase_model):
+        return tools.ml.denoise_exit_wave(wavefields, amplitude_model, phase_model)
 
     def forward_propagator(self, wavefields):
         return tools.propagators.far_field(wavefields)
