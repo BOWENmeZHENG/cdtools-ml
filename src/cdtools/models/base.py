@@ -41,7 +41,7 @@ from scipy import io
 from contextlib import contextmanager
 from cdtools.tools.data import nested_dict_to_h5, h5_to_nested_dict, nested_dict_to_numpy, nested_dict_to_torch
 import os
-from utils import visualize
+from cdtools.tools.misc import visualize
 __all__ = ['CDIModel']
 
 
