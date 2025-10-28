@@ -1,5 +1,17 @@
 # CDTools-ML
 
+## Installation
+
+Install dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+Install the package in development mode:
+```bash
+pip install -e .
+```
+
 ## Examples
 
 ### Gold Ball Ptychography
