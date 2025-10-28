@@ -36,11 +36,18 @@ class Config:
 
     SAVE_TRAIN_DATA: bool = False
     SAVE_EPOCHS: list = field(default_factory=lambda: [10, 30, 50])
-    DEVICE: str = field(
-        default_factory=lambda: "cuda" if torch.cuda.is_available() else "cpu"
-    )
+    # DEVICE: str = field(
+    #     default_factory=lambda: "cuda" if torch.cuda.is_available() else "cpu"
+    # )
 
 def main():
+    if torch.cuda.is_available():
+        device = torch.device("cuda")
+    # elif torch.backends.mps.is_available():
+    #     device = torch.device("mps")
+    else:
+        device = torch.device("cpu")
+
     config = parse_arguments(Config)
     seed_everything(config.SEED)
     phase_model = f'{config.PHASE_MODEL_DIR}/model_epoch_{config.MODEL_ITER}.pth'
@@ -67,8 +74,8 @@ def main():
                 freeze=config.FREEZE
                 )
 
-    model.to(device=config.DEVICE)
-    dataset.get_as(device=config.DEVICE)
+    model.to(device=device)
+    dataset.get_as(device=device)
 
     ptycho_params = [model.obj, model.probe]
     ptycho_optimizer = torch.optim.Adam(ptycho_params, lr=config.LR)

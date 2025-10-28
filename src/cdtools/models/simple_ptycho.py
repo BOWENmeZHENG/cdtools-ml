@@ -40,7 +40,14 @@ class TUNetModel(nn.Module):
         output = self.model(x)
         return output
 
-def load_model(model_path, freeze=False, device='cuda'):
+def load_model(model_path, freeze=False):
+    if t.cuda.is_available():
+        device = t.device("cuda")
+    # elif t.backends.mps.is_available():
+    #     device = t.device("mps")
+    else:
+        device = t.device("cpu")
+
     config = ModelConfig()
     model = TUNetModel(config)
     checkpoint = t.load(model_path, map_location=device)
@@ -135,9 +142,9 @@ class SimplePtycho(CDIModel):
         
         # Load and store the ML models if paths are provided
         if amplitude_model_path is not None: # and phase_model_path is not None:
-            model.amplitude_model = load_model(amplitude_model_path, freeze=freeze, device='cuda')
+            model.amplitude_model = load_model(amplitude_model_path, freeze=freeze)
         if phase_model_path is not None:
-            model.phase_model = load_model(phase_model_path, freeze=freeze, device='cuda')
+            model.phase_model = load_model(phase_model_path, freeze=freeze)
         model.ml_epochs = ml_epochs
         return model
 
