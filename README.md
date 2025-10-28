@@ -1,5 +1,7 @@
 # CDTools-ML
 
+Adding ML functionality to CDTools for enhanced ptychography reconstruction.
+
 ## Installation
 
 Install dependencies:
