@@ -75,7 +75,7 @@ class CDIModel(t.nn.Module):
 
 
     # New code here
-    def ml(self, exit_wave, amplitude_model, phase_model):
+    def ml(self, probe, amplitude_model, phase_model):
         raise NotImplementedError()
 
     def forward_propagator(self, exit_wave):
@@ -101,12 +101,12 @@ class CDIModel(t.nn.Module):
         the same as the arguments to the interaction function.
         """
         exit_wave = self.interaction(*args)
-        if self.epoch in self.ml_epochs:
-            exit_wave = self.ml(exit_wave, self.amplitude_model, self.phase_model)
+        # if self.epoch in self.ml_epochs:
+        #     exit_wave = self.ml(exit_wave, self.amplitude_model, self.phase_model)
 
-        # Store exit wave in list if current epoch is in the save list
-        if self.epoch in self.save_exit_wave_epochs:
-            self.exit_wave_list.extend(exit_wave.detach().cpu().numpy())
+        # # Store exit wave in list if current epoch is in the save list
+        # if self.epoch in self.save_exit_wave_epochs:
+        #     self.exit_wave_list.extend(exit_wave.detach().cpu().numpy())
         
         propagated = self.forward_propagator(exit_wave)
         measured = self.measurement(propagated)

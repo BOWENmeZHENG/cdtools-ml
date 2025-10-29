@@ -19,24 +19,24 @@ class Config:
     ML_ITER: int = 10 #vary this
     # ML_ITER: list = field(default_factory=lambda: [10])
     LR: float = 0.01
-    LR_ML: float = 0.005
+    LR_ML: float = 0.001
     BS: int = 50
     ITERATIONS: int = 200
-    MODEL_ITER: int = 108
+    MODEL_ITER: int = 50
     PROP_DIST: float = 5e-6
     OVERSAMPLING: int = 1
     N_MODES : int = 2
     # PROBE_SUPPORT_RADIUS: int = 60
-    USE_ML: bool = False
+    USE_ML: bool = True
     FREEZE: bool = False
     SCHEDULER: bool = True
     PLOT_FREQ: int = 25
-    SHOW_PLOTS: bool = False
-    SAVE_PLOTS: bool = True
+    SHOW_PLOTS: bool = True
+    SAVE_PLOTS: bool = False
     DATA: str = 'NS_241017025_ccdframes_0_0'
 
     AMP_MODEL: str = None
-    PHASE_MODEL_DIR: str = '1018_0547_phase_combined_exit_waves_d3_bc16_bs16_lr0.001_s43'
+    PHASE_MODEL_DIR: str = '1027_1138_phase_combined_probes_d3_bc16_bs1_lr0.001_s43'
 
     SAVE_TRAIN_DATA: bool = False
     SAVE_EPOCHS: list = field(default_factory=lambda: [10, 30, 50])

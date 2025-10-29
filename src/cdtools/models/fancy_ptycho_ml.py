@@ -519,8 +519,14 @@ class FancyPtychoML(CDIModel):
             pix_trans += (self.translation_scale *
                           self.translation_offsets[index])
 
+        if self.epoch in self.ml_epochs:
+            self.probe = nn.Parameter(self.ml(self.probe, self.amplitude_model, self.phase_model))
+        # else:
+        #     self.probe = self.probe
+
         # This restricts the basis probes to stay within the probe support
         basis_prs = self.probe * self.probe_support[..., :, :]
+
 
         # For a Fourier-space probe, we take an IFT
         if self.fourier_probe:
@@ -537,6 +543,9 @@ class FancyPtychoML(CDIModel):
 
         if self.weights is None or len(self.weights[0].shape) == 0:
             # If a purely stable coherent illumination is defined
+            # if self.epoch == 10:
+            #     print("Using ML-denoised probe at epoch ", self.epoch)
+            #     print(Ws[..., None, None, None].shape, basis_prs.shape)
             prs = Ws[..., None, None, None] * basis_prs
         else:
             # If a frame-by-frame weight matrix is defined
@@ -601,7 +610,7 @@ class FancyPtychoML(CDIModel):
         return exit_waves
 
     def ml(self, wavefields, amplitude_model, phase_model):
-        return tools.ml.denoise_exit_wave(wavefields, amplitude_model, phase_model)
+        return tools.ml.denoise_probe(wavefields, amplitude_model, phase_model)
 
     def forward_propagator(self, wavefields):
         return tools.propagators.far_field(wavefields)
