@@ -63,8 +63,8 @@ class CDIModel(t.nn.Module):
         self.epoch = 0
         self.amplitude_model = None
         self.phase_model = None
-        self.save_exit_wave_epochs = []  # List of epochs to save exit waves
-        self.exit_wave_list = []         # List to store all exit waves
+        self.save_probe_epochs = []  # List of epochs to save probe
+        self.probe_list = []         # List to store all probes
         
     def from_dataset(self, dataset):
         raise NotImplementedError()
