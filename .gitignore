@@ -11,4 +11,7 @@ dist
 */example_data/*
 *.h5
 .DS_Store
-example_models/*
+saved_models/
+real_data/
+results/
+run.sh
