@@ -35,7 +35,6 @@ class Config:
     SAVE_PLOTS: bool = True
     DATA: str = 'NS_241017025_ccdframes_0_0'
 
-    AMP_MODEL: str = None
     PHASE_MODEL_DIR: str = '1018_0547_phase_combined_exit_waves_d3_bc16_bs16_lr0.001_s43'
 
     SAVE_TRAIN_DATA: bool = False
@@ -51,8 +50,8 @@ def main():
     timestamp = datetime.now().strftime('%m%d_%H%M')
 
     if config.SAVE_PLOTS or config.SAVE_TRAIN_DATA:
-        phase_str = f"ml_{config.ML_ITER}_modeliter_{config.MODEL_ITER}_lr_ml_{config.LR_ML}_freeze_{config.FREEZE}" if config.USE_ML else "no_ml"
-        results_dir = f'results/{timestamp}_{phase_str}_lr_{config.LR}_scheduler_{config.SCHEDULER}_bs_{config.BS}_pd_{config.PROP_DIST}_s_{config.SEED}'
+        ml_str = f"ml_{config.ML_ITER}_modeliter_{config.MODEL_ITER}_lr_ml_{config.LR_ML}_freeze_{config.FREEZE}" if config.USE_ML else "no_ml"
+        results_dir = f'results/{timestamp}_{ml_str}_nm_{config.N_MODES}_lr_{config.LR}_scheduler_{config.SCHEDULER}_bs_{config.BS}_pd_{config.PROP_DIST}_s_{config.SEED}'
         os.makedirs(results_dir, exist_ok=True)
         with open(f'{results_dir}/settings.txt', 'w') as f:
             for key, value in config.__dict__.items():
@@ -64,14 +63,14 @@ def main():
 
     model = cdtools.models.FancyPtychoML.from_dataset(
                 dataset,
-                amplitude_model_path=config.AMP_MODEL,
+                amplitude_model_path=None,
                 phase_model_path=phase_model,
                 ml_epochs=ml_epochs, 
                 freeze=config.FREEZE,
-                n_modes=config.N_MODES, # Use 3 incoherently mixing probe modes
-                oversampling=config.OVERSAMPLING, # Simulate the probe on a 2x larger real-space array
-                probe_support_radius=None, #config.PROBE_SUPPORT_RADIUS, # Force the probe to 0 outside a radius of 120 pix
-                propagation_distance=config.PROP_DIST, # Propagate the initial probe guess by 5 mm
+                n_modes=config.N_MODES, 
+                oversampling=config.OVERSAMPLING, 
+                probe_support_radius=None,
+                propagation_distance=config.PROP_DIST, 
             )
 
     model.to(device=config.DEVICE)
