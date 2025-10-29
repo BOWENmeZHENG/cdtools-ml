@@ -15,14 +15,14 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 @dataclass
 class Config:
-    SEED: int = 43
+    SEED: int = 42
     ML_ITER: int = 10 #vary this
     # ML_ITER: list = field(default_factory=lambda: [10])
     LR: float = 0.01
     LR_ML: float = 0.005
     BS: int = 50
-    ITERATIONS: int = 200
-    MODEL_ITER: int = 108
+    ITERATIONS: int = 300
+    MODEL_ITER: int = 50
     PROP_DIST: float = 5e-6
     OVERSAMPLING: int = 1
     N_MODES : int = 2
@@ -30,7 +30,7 @@ class Config:
     USE_ML: bool = False
     FREEZE: bool = False
     SCHEDULER: bool = True
-    PLOT_FREQ: int = 25
+    PLOT_FREQ: int = 50
     SHOW_PLOTS: bool = False
     SAVE_PLOTS: bool = True
     DATA: str = 'NS_241017025_ccdframes_0_0'
