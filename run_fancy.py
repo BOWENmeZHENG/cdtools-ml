@@ -18,26 +18,20 @@ warnings.filterwarnings("ignore", category=UserWarning)
 @dataclass
 class Config:
     SEED: int = 42
-    # ML_ITER: int = 10 #vary this
-    ML_ITER: list = field(default_factory=lambda: [10])
+    ITER_TRAIN_INIT: int = 10 #vary this
     LR: float = 0.005
     LR_ML: float = 0.001
     BS: int = 50
     ITERATIONS: int = 200
-    MODEL_ITER: int = 50
     PROP_DIST: float = 5e-6
     OVERSAMPLING: int = 1
     N_MODES : int = 2
-    # PROBE_SUPPORT_RADIUS: int = 60
     USE_ML: bool = False
-    FREEZE: bool = False
     SCHEDULER: bool = True
     PLOT_FREQ: int = 50
     SHOW_PLOTS: bool = True
     SAVE_PLOTS: bool = False
     DATA: str = 'NS_241017025_ccdframes_30_0'
-
-    PHASE_MODEL_DIR: str = '1018_0547_phase_combined_exit_waves_d3_bc16_bs16_lr0.001_s43'
 
     SAVE_TRAIN_DATA: bool = False
     SAVE_EPOCHS: list = field(default_factory=lambda: [10, 50, 100, 200])
@@ -46,14 +40,12 @@ class Config:
     )
 
 def main():
-
     config = parse_arguments(Config)
     seed_everything(config.SEED)
-    phase_model = f'saved_models/{config.PHASE_MODEL_DIR}/model_epoch_{config.MODEL_ITER}.pth'
     timestamp = datetime.now().strftime('%m%d_%H%M')
 
     if config.SAVE_PLOTS or config.SAVE_TRAIN_DATA:
-        ml_str = f"ml_{config.ML_ITER}_modeliter_{config.MODEL_ITER}_lr_ml_{config.LR_ML}_freeze_{config.FREEZE}" if config.USE_ML else "no_ml"
+        ml_str = f"ml_{config.ITER_TRAIN_INIT}_lr_ml_{config.LR_ML}" if config.USE_ML else "no_ml"
         results_dir = f'results/{timestamp}_{ml_str}_nm_{config.N_MODES}_lr_{config.LR}_scheduler_{config.SCHEDULER}_bs_{config.BS}_pd_{config.PROP_DIST}_s_{config.SEED}'
         os.makedirs(results_dir, exist_ok=True)
         with open(f'{results_dir}/settings.txt', 'w') as f:
@@ -62,7 +54,6 @@ def main():
 
     start_time = time.time()
     dataset = cdtools.datasets.Ptycho2DDataset.from_cxi(f'real_data/{config.DATA}.cxi')
-    ml_epochs = config.ML_ITER if config.USE_ML else []
 
     model = cdtools.models.FancyPtychoML.from_dataset(
                 dataset,
@@ -81,15 +72,13 @@ def main():
     print(model.obj_size)
     dataset.get_as(device=config.DEVICE)
 
-    model_init = TUNetModel(image_shape=model.obj_size).to(device=config.DEVICE)
+    
 
     ptycho_params = [model.obj, model.probe]
     ptycho_optimizer = torch.optim.Adam(ptycho_params, lr=config.LR)
 
-    ml_params = []
-    if model.phase_model is not None:
-        ml_params.extend(model.phase_model.parameters())
-    ml_optimizer = torch.optim.Adam(ml_params, lr=config.LR_ML) if ml_params else None
+    model_init = TUNetModel(image_shape=model.obj_size).to(device=config.DEVICE)
+    ml_optimizer = torch.optim.Adam(model_init.parameters(), lr=config.LR_ML) if config.USE_ML else None
 
     losses = []
 

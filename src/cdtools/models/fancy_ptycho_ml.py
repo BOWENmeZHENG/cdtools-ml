@@ -259,10 +259,6 @@ class FancyPtychoML(CDIModel):
     @classmethod
     def from_dataset(cls,
                      dataset,
-                     amplitude_model_path=None, # new 
-                     phase_model_path=None, # new
-                     ml_epochs=[],  # new
-                     freeze=False,  # new
                      probe_shape=None,
                      randomize_ang=0,
                      n_modes=1,
@@ -495,11 +491,6 @@ class FancyPtychoML(CDIModel):
                 exponentiate_obj=exponentiate_obj,
                 obj_view_crop=obj_view_crop
             )
-        if amplitude_model_path is not None: 
-            model.amplitude_model = load_model(amplitude_model_path, freeze=freeze)
-        if phase_model_path is not None:
-            model.phase_model = load_model(phase_model_path, freeze=freeze)
-        model.ml_epochs = ml_epochs
         model.obj_size = tuple(int(x) for x in obj_size)
         return model
 
