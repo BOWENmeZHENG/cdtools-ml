@@ -101,12 +101,12 @@ class CDIModel(t.nn.Module):
         the same as the arguments to the interaction function.
         """
         exit_wave = self.interaction(*args)
-        if self.epoch in self.ml_epochs:
-            exit_wave = self.ml(exit_wave, self.amplitude_model, self.phase_model)
+        # if self.epoch in self.ml_epochs:
+        #     exit_wave = self.ml(exit_wave, self.amplitude_model, self.phase_model)
 
         # Store exit wave in list if current epoch is in the save list
-        if self.epoch in self.save_exit_wave_epochs:
-            self.exit_wave_list.extend(exit_wave.detach().cpu().numpy())
+        # if self.epoch in self.save_exit_wave_epochs:
+        #     self.exit_wave_list.extend(exit_wave.detach().cpu().numpy())
         
         propagated = self.forward_propagator(exit_wave)
         measured = self.measurement(propagated)
@@ -448,12 +448,7 @@ class CDIModel(t.nn.Module):
 
             # We step the scheduler after the full epoch
             if scheduler is not None:
-                # prev_lr = scheduler._last_lr[0] if hasattr(scheduler, "_last_lr") else scheduler.optimizer.param_groups[0]['lr']
-                # scheduler.step(loss)
                 scheduler.step()
-                # new_lr = scheduler._last_lr[0] if hasattr(scheduler, "_last_lr") else scheduler.optimizer.param_groups[0]['lr']
-                # if new_lr != prev_lr:
-                #     print(f"Scheduler stepped at epoch {self.epoch}, new LR: {new_lr}")
 
             self.loss_history.append(loss)
             self.epoch = len(self.loss_history)
@@ -591,7 +586,6 @@ class CDIModel(t.nn.Module):
 
         # Define the scheduler (only for ptycho optimizer)
         if schedule:
-            # Step the LR every 100 epochs by a factor of 0.1.
             scheduler = t.optim.lr_scheduler.StepLR(ptycho_optimizer, step_size=50, gamma=0.2)
             # scheduler = t.optim.lr_scheduler.ReduceLROnPlateau(ptycho_optimizer, factor=0.2, threshold=1e-9)
 

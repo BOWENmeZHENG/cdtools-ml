@@ -361,7 +361,6 @@ class FancyPtychoML(CDIModel):
                 probe_shape,
                 propagation_distance=propagation_distance,
             )
-        print(f'Probe shape: {probe.shape}')
         if hasattr(dataset, 'background') and dataset.background is not None:
             background = t.sqrt(dataset.background)
         else:
