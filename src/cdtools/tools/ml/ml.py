@@ -1,35 +1,31 @@
 import torch as t
 
-__all__ = ['denoise_exit_wave']
+__all__ = ['denoise_obj']
 
 
-def denoise_exit_wave(wavefields, amplitude_model, phase_model):
-    # Data shape (batch_size, N_modes, H, W)
-    def denoise(wave, amplitude_model, phase_model):
-        wave = wave.unsqueeze(2)  # Shape: (batch_size, N_modes, 1, H, W) - add channel dim
-        amplitude = t.abs(wave)  # Shape: (batch_size, N_modes, 1, H, W) - add channel dim
-        phase = t.angle(wave)    # Shape: (batch_size, N_modes, 1, H, W) - add channel dim
+def denoise_obj(Object, amplitude_model, phase_model):
+    # Data shape (H_obj, W_obj)
+    def denoise(obj, amplitude_model, phase_model):
+        obj = obj.unsqueeze(0)  # Shape: (1, H_obj, W_obj) - add channel dim
+        amplitude = t.abs(obj)  # Shape: (1, H_obj, W_obj) - add channel dim
+        phase = t.angle(obj)    # Shape: (1, H_obj, W_obj) - add channel dim
         if amplitude_model is not None:
             amplitude_model.eval()
-            amplitude = amplitude.reshape(-1, 1, wave.shape[3], wave.shape[4])  # Flatten batch and mode dims
             amplitude_denoised = amplitude_model(amplitude)
-            amplitude_denoised = amplitude_denoised.reshape(wave.shape[0], wave.shape[1], 1, wave.shape[3], wave.shape[4])  # Restore original shape
-            amplitude_denoised = amplitude_denoised.squeeze(2)  # Back to (batch_size, N_modes, H, W)
+            amplitude_denoised = amplitude_denoised.squeeze(0)  # Back to (H_obj, W_obj)
         else:
-            amplitude_denoised = amplitude.squeeze(2) # Back to (batch_size, N_modes, H, W)
+            amplitude_denoised = amplitude.squeeze(0) # Back to (H_obj, W_obj)
 
         if phase_model is not None:
             phase_model.eval()
-            phase = phase.reshape(-1, 1, wave.shape[3], wave.shape[4])  # Flatten batch and mode dims
             phase_denoised = phase_model(phase)
-            phase_denoised = phase_denoised.reshape(wave.shape[0], wave.shape[1], 1, wave.shape[3], wave.shape[4])  # Restore original shape
-            phase_denoised = phase_denoised.squeeze(2)  # Back to (batch_size, N_modes, H, W)
+            phase_denoised = phase_denoised.squeeze(0)  # Back to (H_obj, W_obj)
         else:
-            phase_denoised = phase.squeeze(2) # Back to (batch_size, N_modes, H, W)
+            phase_denoised = phase.squeeze(0) # Back to (H_obj, W_obj)
 
         wave_denoised = amplitude_denoised * t.exp(1j * phase_denoised)
 
         return wave_denoised
 
-    exit_wave_denoised = denoise(wavefields, amplitude_model, phase_model)
-    return exit_wave_denoised
+    Object_denoised = denoise(Object, amplitude_model, phase_model)
+    return Object_denoised

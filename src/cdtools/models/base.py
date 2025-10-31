@@ -75,7 +75,7 @@ class CDIModel(t.nn.Module):
 
 
     # New code here
-    def ml(self, exit_wave, amplitude_model, phase_model):
+    def ml(self, obj, amplitude_model, phase_model):
         raise NotImplementedError()
 
     def forward_propagator(self, exit_wave):

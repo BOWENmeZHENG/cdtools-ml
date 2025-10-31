@@ -593,8 +593,8 @@ class FancyPtychoML(CDIModel):
         
         return exit_waves
 
-    def ml(self, wavefields, amplitude_model, phase_model):
-        return tools.ml.denoise_exit_wave(wavefields, amplitude_model, phase_model)
+    def ml(self, obj, amplitude_model, phase_model):
+        return tools.ml.denoise_exit_wave(obj, amplitude_model, phase_model)
 
     def forward_propagator(self, wavefields):
         return tools.propagators.far_field(wavefields)
