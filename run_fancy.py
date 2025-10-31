@@ -57,10 +57,6 @@ def main():
 
     model = cdtools.models.FancyPtychoML.from_dataset(
                 dataset,
-                amplitude_model_path=None,
-                phase_model_path=phase_model,
-                ml_epochs=ml_epochs, 
-                freeze=config.FREEZE,
                 n_modes=config.N_MODES, 
                 oversampling=config.OVERSAMPLING, 
                 probe_support_radius=None,
