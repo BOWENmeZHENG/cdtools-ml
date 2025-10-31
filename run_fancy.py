@@ -68,8 +68,6 @@ def main():
     print(model.obj_size)
     dataset.get_as(device=config.DEVICE)
 
-    
-
     ptycho_params = [model.obj, model.probe]
     ptycho_optimizer = torch.optim.Adam(ptycho_params, lr=config.LR)
 
@@ -78,13 +76,11 @@ def main():
 
     losses = []
 
-    total_params = sum(p.numel() for p in model.parameters())
-    trainable_params = sum(p.numel() for p in model.parameters() if p.requires_grad)
-    print(f"Total parameters: {total_params:,}")
-    print(f"Trainable parameters: {trainable_params:,}")
-    print(f"Main model LR: {config.LR}")
+    print(f"Ptycho parameters: {sum(p.numel() for p in model.parameters()):,}")
+    print(f"Ptycho LR: {config.LR}")
     if config.USE_ML:
-        print(f"ML model LR: {config.LR_ML}")
+        print(f"ML parameters: {sum(p.numel() for p in model_init.parameters()):,}")
+        print(f"ML LR: {config.LR_ML}")
 
     if config.SAVE_TRAIN_DATA:
         os.makedirs('train_data', exist_ok=True)
