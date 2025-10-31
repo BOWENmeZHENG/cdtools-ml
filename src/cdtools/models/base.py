@@ -448,7 +448,12 @@ class CDIModel(t.nn.Module):
 
             # We step the scheduler after the full epoch
             if scheduler is not None:
-                scheduler.step(loss)
+                # prev_lr = scheduler._last_lr[0] if hasattr(scheduler, "_last_lr") else scheduler.optimizer.param_groups[0]['lr']
+                # scheduler.step(loss)
+                scheduler.step()
+                # new_lr = scheduler._last_lr[0] if hasattr(scheduler, "_last_lr") else scheduler.optimizer.param_groups[0]['lr']
+                # if new_lr != prev_lr:
+                #     print(f"Scheduler stepped at epoch {self.epoch}, new LR: {new_lr}")
 
             self.loss_history.append(loss)
             self.epoch = len(self.loss_history)
@@ -586,9 +591,10 @@ class CDIModel(t.nn.Module):
 
         # Define the scheduler (only for ptycho optimizer)
         if schedule:
-            scheduler = t.optim.lr_scheduler.ReduceLROnPlateau(ptycho_optimizer, factor=0.2, threshold=1e-9)
-        else:
-            scheduler = None
+            # Step the LR every 100 epochs by a factor of 0.1.
+            scheduler = t.optim.lr_scheduler.StepLR(ptycho_optimizer, step_size=50, gamma=0.2)
+            # scheduler = t.optim.lr_scheduler.ReduceLROnPlateau(ptycho_optimizer, factor=0.2, threshold=1e-9)
+
 
         return self.AD_optimize(iterations, data_loader, ptycho_optimizer, ml_optimizer,
                                 scheduler=scheduler,
