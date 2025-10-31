@@ -25,6 +25,7 @@ __all__ = [
     'CDIModel',
     'SimplePtycho',
     'FancyPtycho',
+    'FancyPtychoML',
     'Bragg2DPtycho',
     'Multislice2DPtycho',
     'MultislicePtycho',
@@ -34,6 +35,7 @@ __all__ = [
 from cdtools.models.base import CDIModel
 from cdtools.models.simple_ptycho import SimplePtycho
 from cdtools.models.fancy_ptycho import FancyPtycho
+from cdtools.models.fancy_ptycho_ml import FancyPtychoML
 from cdtools.models.bragg_2d_ptycho import Bragg2DPtycho
 from cdtools.models.multislice_2d_ptycho import Multislice2DPtycho
 from cdtools.models.multislice_ptycho import MultislicePtycho

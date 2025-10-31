@@ -16,14 +16,14 @@ pip install -e .
 
 ## Examples
 
-### Gold Ball Ptychography
+### Using multiple incoherently mixing probe modes
 
 Run the example without ML:
 ```bash
-python examples/gold_ball_ptycho_ml.py
+python python run_fancy.py
 ```
 
 Run the example with ML:
 ```bash
-python examples/gold_ball_ptycho_ml.py --USE_ML
+python python run_fancy.py --USE_ML
 ```

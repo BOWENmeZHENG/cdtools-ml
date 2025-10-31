@@ -11,3 +11,11 @@ dist
 */example_data/*
 *.h5
 .DS_Store
+saved_models/
+real_data/
+results/
+run.sh
+train_data/
+scratch.py
+plot_loss*
+*.png
