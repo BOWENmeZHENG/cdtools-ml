@@ -4,10 +4,12 @@ import numpy as np
 import random
 import os
 import torch
+from torch import nn
 import time
 import logging
 from datetime import datetime
 import matplotlib.pyplot as plt
+from dlsia.core.networks import tunet
 
 import warnings
 from dataclasses import dataclass, field
@@ -16,12 +18,12 @@ warnings.filterwarnings("ignore", category=UserWarning)
 @dataclass
 class Config:
     SEED: int = 42
-    ML_ITER: int = 10 #vary this
-    # ML_ITER: list = field(default_factory=lambda: [10])
-    LR: float = 0.01
-    LR_ML: float = 0.005
+    # ML_ITER: int = 10 #vary this
+    ML_ITER: list = field(default_factory=lambda: [10])
+    LR: float = 0.005
+    LR_ML: float = 0.001
     BS: int = 50
-    ITERATIONS: int = 300
+    ITERATIONS: int = 200
     MODEL_ITER: int = 50
     PROP_DIST: float = 5e-6
     OVERSAMPLING: int = 1
@@ -31,19 +33,20 @@ class Config:
     FREEZE: bool = False
     SCHEDULER: bool = True
     PLOT_FREQ: int = 50
-    SHOW_PLOTS: bool = False
-    SAVE_PLOTS: bool = True
-    DATA: str = 'NS_241017025_ccdframes_0_0'
+    SHOW_PLOTS: bool = True
+    SAVE_PLOTS: bool = False
+    DATA: str = 'NS_241017025_ccdframes_30_0'
 
     PHASE_MODEL_DIR: str = '1018_0547_phase_combined_exit_waves_d3_bc16_bs16_lr0.001_s43'
 
     SAVE_TRAIN_DATA: bool = False
-    SAVE_EPOCHS: list = field(default_factory=lambda: [10, 30, 50])
+    SAVE_EPOCHS: list = field(default_factory=lambda: [10, 50, 100, 200])
     DEVICE: str = field(
         default_factory=lambda: "cuda" if torch.cuda.is_available() else "cpu"
     )
 
 def main():
+
     config = parse_arguments(Config)
     seed_everything(config.SEED)
     phase_model = f'saved_models/{config.PHASE_MODEL_DIR}/model_epoch_{config.MODEL_ITER}.pth'
@@ -59,7 +62,7 @@ def main():
 
     start_time = time.time()
     dataset = cdtools.datasets.Ptycho2DDataset.from_cxi(f'real_data/{config.DATA}.cxi')
-    ml_epochs = [config.ML_ITER] if config.USE_ML else []
+    ml_epochs = config.ML_ITER if config.USE_ML else []
 
     model = cdtools.models.FancyPtychoML.from_dataset(
                 dataset,
@@ -74,7 +77,11 @@ def main():
             )
 
     model.to(device=config.DEVICE)
+
+    print(model.obj_size)
     dataset.get_as(device=config.DEVICE)
+
+    model_init = TUNetModel(image_shape=model.obj_size).to(device=config.DEVICE)
 
     ptycho_params = [model.obj, model.probe]
     ptycho_optimizer = torch.optim.Adam(ptycho_params, lr=config.LR)
@@ -116,37 +123,37 @@ def main():
             probe_amp_vmin, probe_amp_vmax = np.percentile(np.abs(probe_cpu), [0, 100])
             probe_phase_vmin, probe_phase_vmax = np.percentile(np.angle(probe_cpu), [0, 100])
             
-            # plt.subplot(2, 2, 1)
-            # plt.imshow(np.abs(obj_cpu), cmap='viridis', vmin=obj_amp_vmin, vmax=obj_amp_vmax)
-            # plt.title(f'Object Amplitude - Iteration {i + 1}')
-            # plt.colorbar()
-            
-            # plt.subplot(2, 2, 2)
-            # plt.imshow(np.angle(obj_cpu), cmap='twilight', vmin=obj_phase_vmin, vmax=obj_phase_vmax)
-            # plt.title(f'Object Phase - Iteration {i + 1}')
-            # plt.colorbar()
-
-
-            # crop center 250x350
-            h, w = obj_cpu.shape[:2]
-            ch, cw = 250, 350
-            sh = max((h - ch) // 2, 0)
-            sw = max((w - cw) // 2, 0)
-            cropped = obj_cpu[sh:sh + min(ch, h), sw:sw + min(cw, w)]
-
-            amp = np.abs(cropped)
-            phase = np.angle(cropped)
-            amp_vmin, amp_vmax = np.percentile(amp, [0.5, 99.5])
-            phase_vmin, phase_vmax = np.percentile(phase, [0.5, 99.5])
             plt.subplot(2, 2, 1)
-            plt.imshow(amp, cmap='viridis', vmin=amp_vmin, vmax=amp_vmax)
+            plt.imshow(np.abs(obj_cpu), cmap='viridis', vmin=obj_amp_vmin, vmax=obj_amp_vmax)
             plt.title(f'Object Amplitude - Iteration {i + 1}')
             plt.colorbar()
             
             plt.subplot(2, 2, 2)
-            plt.imshow(phase, cmap='twilight', vmin=phase_vmin, vmax=phase_vmax)
+            plt.imshow(np.angle(obj_cpu), cmap='twilight', vmin=obj_phase_vmin, vmax=obj_phase_vmax)
             plt.title(f'Object Phase - Iteration {i + 1}')
             plt.colorbar()
+
+
+            # crop center 250x350
+            # h, w = obj_cpu.shape[:2]
+            # ch, cw = 250, 350
+            # sh = max((h - ch) // 2, 0)
+            # sw = max((w - cw) // 2, 0)
+            # cropped = obj_cpu[sh:sh + min(ch, h), sw:sw + min(cw, w)]
+
+            # amp = np.abs(cropped)
+            # phase = np.angle(cropped)
+            # amp_vmin, amp_vmax = np.percentile(amp, [0.5, 99.5])
+            # phase_vmin, phase_vmax = np.percentile(phase, [0.5, 99.5])
+            # plt.subplot(2, 2, 1)
+            # plt.imshow(amp, cmap='viridis', vmin=amp_vmin, vmax=amp_vmax)
+            # plt.title(f'Object Amplitude - Iteration {i + 1}')
+            # plt.colorbar()
+            
+            # plt.subplot(2, 2, 2)
+            # plt.imshow(phase, cmap='twilight', vmin=phase_vmin, vmax=phase_vmax)
+            # plt.title(f'Object Phase - Iteration {i + 1}')
+            # plt.colorbar()
 
             plt.subplot(2, 2, 3)
             plt.imshow(np.abs(probe_cpu[0]), cmap='viridis', vmin=probe_amp_vmin, vmax=probe_amp_vmax)

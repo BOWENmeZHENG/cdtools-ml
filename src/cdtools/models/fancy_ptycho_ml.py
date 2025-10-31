@@ -285,7 +285,7 @@ class FancyPtychoML(CDIModel):
                      exponentiate_obj=False,
                      phase_only=False,
                      obj_view_crop=None,
-                     obj_padding=200,
+                     obj_padding=1, # keep this for now
                      ):
 
         wavelength = dataset.wavelength
@@ -345,6 +345,8 @@ class FancyPtychoML(CDIModel):
             padding=obj_padding,
         )
 
+        # print(f'Object size: {obj_size}, min translation: {min_translation}')
+
         # Finally, initialize the probe and  object using this information
         if probe_shape is None:
             probe = tools.initializers.SHARP_style_probe(
@@ -359,7 +361,7 @@ class FancyPtychoML(CDIModel):
                 probe_shape,
                 propagation_distance=propagation_distance,
             )
-
+        print(f'Probe shape: {probe.shape}')
         if hasattr(dataset, 'background') and dataset.background is not None:
             background = t.sqrt(dataset.background)
         else:
@@ -499,6 +501,7 @@ class FancyPtychoML(CDIModel):
         if phase_model_path is not None:
             model.phase_model = load_model(phase_model_path, freeze=freeze)
         model.ml_epochs = ml_epochs
+        model.obj_size = tuple(int(x) for x in obj_size)
         return model
 
 

@@ -1,15 +1,16 @@
 import numpy as np
 import torch
-from utils import TUNetModel, seed_everything, visualize
+from cdtools.tools.misc import TUNetModel, seed_everything, visualize
 import csv
 import os
 import time
 from datetime import datetime
 
 SEED = 43
-DATA = 'combined_exit_waves'
+DATA = 'exit_waves_train_1_[10, 50, 100, 200]'
+N_MODES = 2
 MODEL_TYPE = 'phase'  # 'amp' or 'phase'
-EPOCHS = 50
+EPOCHS = 100
 BATCHSIZE = 16
 LR = 1e-3
 DEPTH = 3
@@ -19,6 +20,8 @@ DEVICE = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 data_complex = np.load(f'train_data/{DATA}.npy')
 print(f"Data shape: {data_complex.shape}")
+data_complex = data_complex.reshape(-1, data_complex.shape[-2], data_complex.shape[-1])
+print(f"Reshaped data shape: {data_complex.shape}")
 data = np.abs(data_complex) if MODEL_TYPE == 'amp' else np.angle(data_complex)
 print(f"Data shape: {data.shape}")
 data_tensor = torch.from_numpy(data).unsqueeze(1).to(DEVICE)  # shape (N, 1, H, W)

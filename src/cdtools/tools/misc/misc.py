@@ -59,28 +59,37 @@ def parse_arguments(Config):
 
 
 class TUNetModel(nn.Module):
-    def __init__(self, config):
+    def __init__(self, image_shape):
         super().__init__()
-        self.image_shape = (config.input_size, config.input_size)
-        self.in_channels = 1
-        self.out_channels = 1
-        self.depth = config.depth
-        self.base_channels = config.base_channels
-        self.growth_rate = config.growth_rate
-        self.hidden_rate = config.hidden_rate
         self.model = tunet.TUNet(
-            image_shape=self.image_shape,
-            in_channels=self.in_channels,
-            out_channels=self.out_channels,
-            depth=self.depth,
-            base_channels=self.base_channels,
-            growth_rate=self.growth_rate,
-            hidden_rate=self.hidden_rate
+            image_shape=image_shape,
+            in_channels=1,
+            out_channels=1,
+            depth=3,
+            base_channels=16,
+            growth_rate=2,
+            hidden_rate=1
         )
         
     def forward(self, x):
         output = self.model(x)
         return output
+
+# def load_model(model_config, model_path, freeze=False):
+#     if t.cuda.is_available():
+#         device = t.device("cuda")
+#     else:
+#         device = t.device("cpu")
+
+#     model = TUNetModel(model_config)
+#     checkpoint = t.load(model_path, map_location=device)
+#     model.load_state_dict(checkpoint)
+#     model.to(device)
+#     model.eval() 
+
+#     for param in model.parameters():
+#         param.requires_grad = not freeze
+#     return model
 
 def denoise(wave, amplitude_model, phase_model):
     with torch.no_grad():
