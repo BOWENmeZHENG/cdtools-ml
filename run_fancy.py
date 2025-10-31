@@ -1,5 +1,5 @@
 import cdtools
-from cdtools.tools.misc import visualize, scatter2D, parse_arguments, seed_everything
+from cdtools.tools.misc import visualize, scatter2D, parse_arguments, seed_everything, TUNetModel
 import numpy as np
 import random
 import os
@@ -18,7 +18,7 @@ warnings.filterwarnings("ignore", category=UserWarning)
 @dataclass
 class Config:
     SEED: int = 42
-    ITER_TRAIN_INIT: int = 10 #vary this
+    ML_ITER: int = 10 #vary this
     LR: float = 0.005
     LR_ML: float = 0.001
     BS: int = 50
@@ -57,6 +57,7 @@ def main():
 
     model = cdtools.models.FancyPtychoML.from_dataset(
                 dataset,
+                ml_iter=config.ML_ITER,
                 n_modes=config.N_MODES, 
                 oversampling=config.OVERSAMPLING, 
                 probe_support_radius=None,
