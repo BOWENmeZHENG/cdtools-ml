@@ -29,6 +29,7 @@ loss
 """
 
 import torch as t
+import torch.nn as nn
 from torch.utils import data as torchdata
 from matplotlib import pyplot as plt
 from matplotlib.widgets import Slider
@@ -61,10 +62,6 @@ class CDIModel(t.nn.Module):
         self.loss_history = []
         self.training_history = ''
         self.epoch = 0
-        self.amplitude_model = None
-        self.phase_model = None
-        self.save_exit_wave_epochs = []  # List of epochs to save exit waves
-        self.exit_wave_list = []         # List to store all exit waves
         
     def from_dataset(self, dataset):
         raise NotImplementedError()
@@ -75,7 +72,7 @@ class CDIModel(t.nn.Module):
 
 
     # New code here
-    def ml(self, obj, amplitude_model, phase_model):
+    def ml(self, obj, model):
         raise NotImplementedError()
 
     def forward_propagator(self, exit_wave):
@@ -337,7 +334,8 @@ class CDIModel(t.nn.Module):
 
 
 
-    def AD_optimize(self, iterations, data_loader, ptycho_optimizer, ml_optimizer,
+    def AD_optimize(self, iterations, data_loader, ml_model, 
+                    ptycho_optimizer, ml_optimizer,
                     scheduler=None, regularization_factor=None, thread=True,
                     calculation_width=10):
         """Runs a round of reconstruction using the provided optimizer
@@ -384,6 +382,23 @@ class CDIModel(t.nn.Module):
             N = 0
             t0 = time.time()
 
+            if self.epoch == self.ml_epoch:
+                # train ml_model with self.obj
+                
+                ml_model.train()
+                # visualize(self.obj.detach(), 'Before ML Denoising')
+                for e in range(100):
+                    obj_denoised = self.ml(self.obj, ml_model)
+                    loss_unet = t.mean(t.abs(obj_denoised - self.obj) ** 2)
+                    # loss_unet = self.loss(self.obj, obj_denoised)
+                    print(f"ML Epoch {self.epoch}, Iteration {e}, Loss: {loss_unet.item()}")
+                    ml_optimizer.zero_grad()
+                    loss_unet.backward()
+                    ml_optimizer.step()
+                obj_denoised = self.ml(self.obj, ml_model)
+                # visualize(obj_denoised.detach(), 'After ML Denoising')
+                self.obj = nn.Parameter(obj_denoised)
+
             # The data loader is responsible for setting the minibatch
             # size, so each set is a minibatch
             for inputs, patterns in data_loader:
@@ -392,8 +407,8 @@ class CDIModel(t.nn.Module):
                 def closure():
                     # Zero gradients for both optimizers
                     ptycho_optimizer.zero_grad()
-                    if self.epoch in self.ml_epochs:
-                        ml_optimizer.zero_grad()
+                    # if self.epoch == self.ml_epoch:
+                    #     ml_optimizer.zero_grad()
 
                     # We further break up the minibatch into a set of chunks.
                     # This lets us use larger minibatches than can fit
@@ -440,8 +455,8 @@ class CDIModel(t.nn.Module):
                 loss += ptycho_optimizer.step(closure).detach().cpu().numpy()
                 
                 # Only update ML parameters at specified epochs
-                if self.epoch in self.ml_epochs:
-                    ml_optimizer.step()
+                # if self.epoch in self.ml_epochs:
+                #     ml_optimizer.step()
 
             
             loss /= normalization
@@ -528,6 +543,7 @@ class CDIModel(t.nn.Module):
             self,
             iterations,
             dataset,
+            ml_model,
             ptycho_optimizer,
             ml_optimizer,
             batch_size=15,
@@ -590,7 +606,8 @@ class CDIModel(t.nn.Module):
             # scheduler = t.optim.lr_scheduler.ReduceLROnPlateau(ptycho_optimizer, factor=0.2, threshold=1e-9)
 
 
-        return self.AD_optimize(iterations, data_loader, ptycho_optimizer, ml_optimizer,
+        return self.AD_optimize(iterations, data_loader, ml_model, 
+                                ptycho_optimizer, ml_optimizer,
                                 scheduler=scheduler,
                                 regularization_factor=regularization_factor,
                                 thread=thread,

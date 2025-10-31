@@ -15,55 +15,6 @@ from dataclasses import dataclass
 
 __all__ = ['FancyPtychoML']
 
-@dataclass
-class ModelConfig:
-    input_size: int = 512
-    depth: int = 3
-    base_channels: int = 16
-    growth_rate: int = 2
-    hidden_rate: int = 1
-
-class TUNetModel(nn.Module):
-    def __init__(self, config):
-        super().__init__()
-        self.image_shape = (config.input_size, config.input_size)
-        self.in_channels = 1
-        self.out_channels = 1
-        self.depth = config.depth
-        self.base_channels = config.base_channels
-        self.growth_rate = config.growth_rate
-        self.hidden_rate = config.hidden_rate
-        self.model = tunet.TUNet(
-            image_shape=self.image_shape,
-            in_channels=self.in_channels,
-            out_channels=self.out_channels,
-            depth=self.depth,
-            base_channels=self.base_channels,
-            growth_rate=self.growth_rate,
-            hidden_rate=self.hidden_rate
-        )
-        
-    def forward(self, x):
-        output = self.model(x)
-        return output
-
-def load_model(model_path, freeze=False):
-    if t.cuda.is_available():
-        device = t.device("cuda")
-    else:
-        device = t.device("cpu")
-
-    config = ModelConfig()
-    model = TUNetModel(config)
-    checkpoint = t.load(model_path, map_location=device)
-    model.load_state_dict(checkpoint)
-    model.to(device)
-    model.eval() 
-
-    for param in model.parameters():
-        param.requires_grad = not freeze
-    return model
-
 class FancyPtychoML(CDIModel):
 
     def __init__(self,
@@ -259,6 +210,7 @@ class FancyPtychoML(CDIModel):
     @classmethod
     def from_dataset(cls,
                      dataset,
+                     ml_iter,
                      probe_shape=None,
                      randomize_ang=0,
                      n_modes=1,
@@ -492,6 +444,7 @@ class FancyPtychoML(CDIModel):
                 obj_view_crop=obj_view_crop
             )
         model.obj_size = tuple(int(x) for x in obj_size)
+        model.ml_epoch = ml_iter
         return model
 
 
@@ -593,8 +546,8 @@ class FancyPtychoML(CDIModel):
         
         return exit_waves
 
-    def ml(self, obj, amplitude_model, phase_model):
-        return tools.ml.denoise_exit_wave(obj, amplitude_model, phase_model)
+    def ml(self, obj, model):
+        return tools.ml.denoise_obj(obj, model)
 
     def forward_propagator(self, wavefields):
         return tools.propagators.far_field(wavefields)
