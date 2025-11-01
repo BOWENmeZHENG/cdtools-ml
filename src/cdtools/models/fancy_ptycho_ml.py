@@ -520,9 +520,12 @@ class FancyPtychoML(CDIModel):
                           self.translation_offsets[index])
 
         if self.epoch in self.ml_epochs:
-            self.probe = nn.Parameter(self.ml(self.probe, self.amplitude_model, self.phase_model))
-        # else:
-        #     self.probe = self.probe
+            with t.no_grad():
+                probe_denoised = nn.Parameter(self.ml(self.probe, self.amplitude_model, self.phase_model))
+                self.probe.data.copy_(probe_denoised.data)
+                    # obj_denoised = self.ml(self.obj, ml_model)
+                    
+                # ml_model.eval()
 
         # This restricts the basis probes to stay within the probe support
         basis_prs = self.probe * self.probe_support[..., :, :]

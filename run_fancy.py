@@ -36,7 +36,7 @@ class Config:
     DATA: str = 'NS_241017025_ccdframes_0_0'
 
     AMP_MODEL: str = None
-    PHASE_MODEL_DIR: str = '1027_1138_phase_combined_probes_d3_bc16_bs1_lr0.001_s43'
+    PHASE_MODEL_DIR: str = '1024_1434_phase_combined_probes_d3_bc16_bs1_lr0.001_s43'
 
     SAVE_TRAIN_DATA: bool = False
     SAVE_EPOCHS: list = field(default_factory=lambda: [10, 30, 50])
