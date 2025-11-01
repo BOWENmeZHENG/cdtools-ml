@@ -28,6 +28,7 @@ loss
 
 """
 
+from xml.parsers.expat import model
 import torch as t
 import torch.nn as nn
 from torch.utils import data as torchdata
@@ -337,7 +338,7 @@ class CDIModel(t.nn.Module):
 
     def AD_optimize(self, iterations, data_loader, ml_model, unet_epochs,
                     ptycho_optimizer, ml_optimizer,
-                    scheduler=None, regularization_factor=None, thread=True,
+                    scheduler=None, save_unet=False, regularization_factor=None, thread=True,
                     calculation_width=10):
         """Runs a round of reconstruction using the provided optimizer
 
@@ -383,26 +384,32 @@ class CDIModel(t.nn.Module):
             N = 0
             t0 = time.time()
 
+            # if self.epoch == 10 or self.epoch == 200:
+            #     t.save(self.obj.detach(), f'obj_epoch_{self.epoch}.pt')
+            #     print(f"Saved self.obj at epoch {self.epoch}")
+
             if self.epoch == self.ml_epoch:
-                # train ml_model with self.obj
                 
-                ml_model.train()
-                # visualize(self.obj.detach(), 'Before ML Denoising')
-                for e in range(unet_epochs):
-                    obj_denoised = self.ml(self.obj, ml_model)
-                    loss_unet = t.mean(t.abs(obj_denoised - self.obj) ** 2)
-                    # loss_unet = t.mean(t.abs(obj_denoised - self.obj))
-                    if e % 50 == 0:
-                        print(f"ML Epoch {self.epoch}, Iteration {e}, Loss: {loss_unet.item()}")
-                    ml_optimizer.zero_grad()
-                    loss_unet.backward()
-                    ml_optimizer.step()
+                # ml_model.train()
+                # for e in range(unet_epochs):
+                #     obj_denoised = self.ml(self.obj, ml_model)
+                #     loss_unet = t.mean(t.abs(obj_denoised - self.obj) ** 2)
+                #     # loss_unet = t.mean(t.abs(obj_denoised - self.obj))
+                #     if e % 50 == 0:
+                #         print(f"ML Epoch {self.epoch}, Iteration {e}, Loss: {loss_unet.item()}")
+                #     ml_optimizer.zero_grad()
+                #     loss_unet.backward()
+                #     ml_optimizer.step()
                 
+                # if save_unet:
+                #     saved_model_path = f'model_epoch_{self.epoch}.pth'
+                #     t.save(ml_model.state_dict(), saved_model_path)
+                #     print(f"Model saved as {saved_model_path}")
+
                 # Apply final ML denoising and update in-place to preserve gradients
                 with t.no_grad():
                     obj_denoised = self.ml(self.obj, ml_model)
                     self.obj.data.copy_(obj_denoised.data)
-                ml_model.eval()
 
             # The data loader is responsible for setting the minibatch
             # size, so each set is a minibatch
@@ -554,6 +561,7 @@ class CDIModel(t.nn.Module):
             ml_optimizer,
             batch_size=15,
             schedule=False,
+            save_unet=False, 
             subset=None,
             regularization_factor=None,
             thread=True,
@@ -614,6 +622,7 @@ class CDIModel(t.nn.Module):
 
         return self.AD_optimize(iterations, data_loader, ml_model, unet_epochs,
                                 ptycho_optimizer, ml_optimizer, 
+                                save_unet=save_unet,
                                 scheduler=scheduler,
                                 regularization_factor=regularization_factor,
                                 thread=thread,

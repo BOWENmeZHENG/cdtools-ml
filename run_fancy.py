@@ -19,12 +19,12 @@ warnings.filterwarnings("ignore", category=UserWarning)
 @dataclass
 class Config:
     SEED: int = 42
-    ML_ITER: int = 80 #vary this
+    ML_ITER: int = 5 #vary this
     UNET_EPOCHS: int = 500
     LR: float = 0.005
     LR_ML: float = 0.0001
     BS: int = 50
-    ITERATIONS: int = 100
+    ITERATIONS: int = 50
     PROP_DIST: float = 5e-6
     OVERSAMPLING: int = 1
     N_MODES : int = 2
@@ -33,7 +33,7 @@ class Config:
     PLOT_FREQ: int = 10
     SHOW_PLOTS: bool = False
     SAVE_PLOTS: bool = True
-    DATA: str = 'NS_241017025_ccdframes_0_0'
+    DATA: str = 'train_1'
 
     SAVE_TRAIN_DATA: bool = False
     SAVE_EPOCHS: list = field(default_factory=lambda: [10, 50, 100, 200])
@@ -76,6 +76,9 @@ def main():
 
     # model_init = TUNetModel(image_shape=model.obj_size).to(device=config.DEVICE)
     model_init = ComplexUNet(image_shape=model.obj_size).to(device=config.DEVICE)
+    checkpoint = torch.load('saved_denoising_model.pth', map_location=config.DEVICE)
+    model_init.load_state_dict(checkpoint)
+    # model.to(device=config.DEVICE)
     ml_optimizer = torch.optim.Adam(model_init.parameters(), lr=config.LR_ML) if config.USE_ML else None
 
 
@@ -96,7 +99,8 @@ def main():
                             ptycho_optimizer=ptycho_optimizer,
                             ml_optimizer=ml_optimizer,
                             batch_size=config.BS,
-                            schedule=config.SCHEDULER)):
+                            schedule=config.SCHEDULER,
+                            save_unet=False)):
         losses.append(loss)
         if (i + 1) % config.PLOT_FREQ == 0:
             print(i + 1, loss)

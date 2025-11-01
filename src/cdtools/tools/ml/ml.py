@@ -36,7 +36,7 @@ class RealUNet(nn.Module):
             in_channels=1,
             out_channels=1,
             depth=4,
-            base_channels=32,
+            base_channels=64,
             growth_rate=2,
             hidden_rate=1
         )
@@ -57,7 +57,7 @@ class ComplexUNet(nn.Module):
             in_channels=2,
             out_channels=2,
             depth=4,
-            base_channels=64,
+            base_channels=32,
             growth_rate=2,
             hidden_rate=1
         )

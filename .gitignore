@@ -19,3 +19,5 @@ train_data/
 scratch.py
 plot_loss*
 *.png
+*.pth
+*.pt
