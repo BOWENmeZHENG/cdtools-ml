@@ -62,6 +62,7 @@ class CDIModel(t.nn.Module):
         self.loss_history = []
         self.training_history = ''
         self.epoch = 0
+        self.ml_epoch = None  # Initialize ml_epoch to avoid AttributeError
         
     def from_dataset(self, dataset):
         raise NotImplementedError()
@@ -334,7 +335,7 @@ class CDIModel(t.nn.Module):
 
 
 
-    def AD_optimize(self, iterations, data_loader, ml_model, 
+    def AD_optimize(self, iterations, data_loader, ml_model, unet_epochs,
                     ptycho_optimizer, ml_optimizer,
                     scheduler=None, regularization_factor=None, thread=True,
                     calculation_width=10):
@@ -387,17 +388,21 @@ class CDIModel(t.nn.Module):
                 
                 ml_model.train()
                 # visualize(self.obj.detach(), 'Before ML Denoising')
-                for e in range(100):
+                for e in range(unet_epochs):
                     obj_denoised = self.ml(self.obj, ml_model)
                     loss_unet = t.mean(t.abs(obj_denoised - self.obj) ** 2)
-                    # loss_unet = self.loss(self.obj, obj_denoised)
-                    print(f"ML Epoch {self.epoch}, Iteration {e}, Loss: {loss_unet.item()}")
+                    # loss_unet = t.mean(t.abs(obj_denoised - self.obj))
+                    if e % 50 == 0:
+                        print(f"ML Epoch {self.epoch}, Iteration {e}, Loss: {loss_unet.item()}")
                     ml_optimizer.zero_grad()
                     loss_unet.backward()
                     ml_optimizer.step()
-                obj_denoised = self.ml(self.obj, ml_model)
-                # visualize(obj_denoised.detach(), 'After ML Denoising')
-                self.obj = nn.Parameter(obj_denoised)
+                
+                # Apply final ML denoising and update in-place to preserve gradients
+                with t.no_grad():
+                    obj_denoised = self.ml(self.obj, ml_model)
+                    self.obj.data.copy_(obj_denoised.data)
+                ml_model.eval()
 
             # The data loader is responsible for setting the minibatch
             # size, so each set is a minibatch
@@ -544,6 +549,7 @@ class CDIModel(t.nn.Module):
             iterations,
             dataset,
             ml_model,
+            unet_epochs,
             ptycho_optimizer,
             ml_optimizer,
             batch_size=15,
@@ -606,8 +612,8 @@ class CDIModel(t.nn.Module):
             # scheduler = t.optim.lr_scheduler.ReduceLROnPlateau(ptycho_optimizer, factor=0.2, threshold=1e-9)
 
 
-        return self.AD_optimize(iterations, data_loader, ml_model, 
-                                ptycho_optimizer, ml_optimizer,
+        return self.AD_optimize(iterations, data_loader, ml_model, unet_epochs,
+                                ptycho_optimizer, ml_optimizer, 
                                 scheduler=scheduler,
                                 regularization_factor=regularization_factor,
                                 thread=thread,

@@ -1,6 +1,6 @@
 import cdtools
 from cdtools.tools.misc import visualize, scatter2D, parse_arguments, seed_everything, TUNetModel
-from cdtools.tools.ml import ComplexUNet
+from cdtools.tools.ml import ComplexUNet, RealUNet
 import numpy as np
 import random
 import os
@@ -19,9 +19,10 @@ warnings.filterwarnings("ignore", category=UserWarning)
 @dataclass
 class Config:
     SEED: int = 42
-    ML_ITER: int = 5 #vary this
+    ML_ITER: int = 80 #vary this
+    UNET_EPOCHS: int = 500
     LR: float = 0.005
-    LR_ML: float = 0.005
+    LR_ML: float = 0.0001
     BS: int = 50
     ITERATIONS: int = 100
     PROP_DIST: float = 5e-6
@@ -29,10 +30,10 @@ class Config:
     N_MODES : int = 2
     USE_ML: bool = True
     SCHEDULER: bool = True
-    PLOT_FREQ: int = 1
+    PLOT_FREQ: int = 10
     SHOW_PLOTS: bool = False
-    SAVE_PLOTS: bool = False
-    DATA: str = 'NS_241017025_ccdframes_30_0'
+    SAVE_PLOTS: bool = True
+    DATA: str = 'NS_241017025_ccdframes_0_0'
 
     SAVE_TRAIN_DATA: bool = False
     SAVE_EPOCHS: list = field(default_factory=lambda: [10, 50, 100, 200])
@@ -91,7 +92,7 @@ def main():
         model.save_exit_wave_epochs = config.SAVE_EPOCHS
 
     for i, loss in enumerate(model.Adam_optimize(config.ITERATIONS, dataset,
-                            ml_model=model_init,
+                            ml_model=model_init, unet_epochs=config.UNET_EPOCHS,
                             ptycho_optimizer=ptycho_optimizer,
                             ml_optimizer=ml_optimizer,
                             batch_size=config.BS,

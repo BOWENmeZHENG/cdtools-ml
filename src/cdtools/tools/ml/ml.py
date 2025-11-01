@@ -2,7 +2,8 @@ import torch
 import torch.nn as nn
 from dlsia.core.networks import tunet
 
-__all__ = ['complex_to_2ch', 'ch2_to_complex', 'pad_to_multiple', 'ComplexUNet', 'denoise_obj']
+__all__ = ['complex_to_2ch', 'ch2_to_complex', 'pad_to_multiple', 'ComplexUNet', 
+           'RealUNet', 'denoise_obj', 'denoise_obj_phase', 'denoise_obj_amplitude']
 
 def complex_to_2ch(x: torch.Tensor) -> torch.Tensor:
     """
@@ -26,6 +27,24 @@ def pad_to_multiple(x, multiple=16):
     pad_h = (multiple - H % multiple) % multiple
     pad_w = (multiple - W % multiple) % multiple
     return F.pad(x, (0, pad_w, 0, pad_h)), pad_h, pad_w
+
+class RealUNet(nn.Module):
+    def __init__(self, image_shape):
+        super().__init__()
+        self.model = tunet.TUNet(
+            image_shape=image_shape,
+            in_channels=1,
+            out_channels=1,
+            depth=4,
+            base_channels=32,
+            growth_rate=2,
+            hidden_rate=1
+        )
+        
+    def forward(self, x):
+        x = x.unsqueeze(0)  # Add channel dimension: [1, 1, H, W]
+        output = self.model(x)
+        return output.squeeze(0)  # Remove channel dimension: [H, W]
 
 class ComplexUNet(nn.Module):
     """
@@ -51,6 +70,22 @@ class ComplexUNet(nn.Module):
 def denoise_obj(obj, model):
     obj = obj.unsqueeze(0)  # Shape: (1, H_obj, W_obj)
     obj_denoised = model(obj)
+    return obj_denoised.squeeze(0)  # Back to (H_obj, W_obj)
+
+def denoise_obj_phase(obj, phase_model):
+    obj = obj.unsqueeze(0)  # Shape: (1, H_obj, W_obj)
+    amplitude = torch.abs(obj)  # Shape: (1, H_obj, W_obj)
+    phase = torch.angle(obj)    # Shape: (1, H_obj, W_obj)
+    phase_denoised = phase_model(phase)
+    obj_denoised = amplitude * torch.exp(1j * phase_denoised)
+    return obj_denoised.squeeze(0)  # Back to (H_obj, W_obj)
+
+def denoise_obj_amplitude(obj, amplitude_model):
+    obj = obj.unsqueeze(0)  # Shape: (1, H_obj, W_obj)
+    amplitude = torch.abs(obj)  # Shape: (1, H_obj, W_obj)
+    phase = torch.angle(obj)    # Shape: (1, H_obj, W_obj)
+    amplitude_denoised = amplitude_model(amplitude)
+    obj_denoised = amplitude_denoised * torch.exp(1j * phase)
     return obj_denoised.squeeze(0)  # Back to (H_obj, W_obj)
 
 # def denoise_obj(Object, amplitude_model, phase_model):
